@@ -1,89 +1,97 @@
-let currentValue = '';
-let previousValue = '';
-let calculation = null;
-let resetDisplay = false;
+const screen = document.getElementById("display");
+const nums = document.querySelectorAll(".num");
+const ops = document.querySelectorAll(".operator");
+const clear = document.querySelector(".clear");
+const equals = document.querySelector(".equals");
+const dot = document.querySelector(".decimal");
 
-const display = document.getElementById('display');
-display.value = '0';
+let text = "";
+let saved = null;
+let action = "";
+let isNew = false;
 
-document.querySelectorAll('.container button').forEach(button => {
-  button.addEventListener('click', () => {
-    if (button.classList.contains('clear')) {
-      clear();
-    } else if (button.classList.contains('operator')) {
-      inputOperator(button.textContent);
-    } else if (button.classList.contains('num')) {
-      inputNumber(button.textContent);
-    } else if (button.classList.contains('equals')) {
-      calculate();
-    } else if (button.classList.contains('decimal')) {
-      inputDecimal();
-    }
-  });
+nums.forEach(btn => {
+    btn.addEventListener("click", () => {
+        if (isNew) {
+            text = btn.textContent;
+            isNew = false;
+        } else {
+            text += btn.textContent;
+        }
+        screen.value = text;
+    });
 });
 
-function clear() {
-  display.value = '0';
-  currentValue = '';
-  previousValue = '';
-  calculation = null;
+ops.forEach(btn => {
+    btn.addEventListener("click", () => {
+        if (text !== "") {
+            if (saved !== null) {
+                const answer = solve();
+                saved = answer;
+                screen.value = answer;
+            } else {
+                saved = parseFloat(text);
+            }
+            action = btn.textContent;
+            isNew = true;
+        }
+    });
+});
+
+dot.addEventListener("click", () => {
+    if (!text.includes(".")) {
+        if (text === "" || isNew) {
+            text = "0";
+            isNew = false;
+        }
+        text += ".";
+        screen.value = text;
+    }
+});
+
+equals.addEventListener("click", () => {
+    if (saved !== null && text !== "" && action) {
+        const answer = solve();
+        screen.value = answer;
+        text = answer.toString();
+        saved = null;
+        action = "";
+    }
+});
+
+clear.addEventListener("click", () => {
+    reset();
+});
+
+function solve() {
+    const x = saved;
+    const y = parseFloat(text);
+    let answer;
+
+    switch (action) {
+        case "+":
+            answer = x + y;
+            break;
+        case "-":
+            answer = x - y;
+            break;
+        case "*":
+            answer = x * y;
+            break;
+        case "/":
+            answer = y !== 0 ? x / y : "Error";
+            break;
+        default:
+            return y;
+    }
+
+    return typeof answer === "number" ? Number(answer.toFixed(8)) : answer;
 }
 
-function inputOperator(operator) {
-  if (calculation !== null) calculate();
-  previousValue = display.value;
-  calculation = operator;
-  display.value = operator;
-  resetDisplay = true;
+function reset() {
+    text = "";
+    saved = null;
+    action = "";
+    isNew = false;
+    screen.value = "";
 }
-
-function inputNumber(number) {
-  if (resetDisplay) {
-    display.value = number;
-    resetDisplay = false;
-  } else {
-    display.value = display.value === '0' ? number : display.value + number;
-  }
-  currentValue = display.value;
-}
-
-function calculate() {
-  if (calculation === null || resetDisplay) return;
-  
-  const prev = parseFloat(previousValue);
-  const current = parseFloat(currentValue);
-  let result;
-
-  switch (calculation) {
-    case '+':
-      result = prev + current;
-      break;
-    case '-':
-      result = prev - current;
-      break;
-    case '*':
-      result = prev * current;
-      break;
-    case '/':
-      result = prev / current;
-      break;
-    default:
-      return;
-  }
-
-  display.value = Math.round(result * 1000000) / 1000000;
-  calculation = null;
-  currentValue = display.value;
-  resetDisplay = true;
-}
-
-function inputDecimal() {
-  if (resetDisplay) {
-    display.value = '0.';
-    resetDisplay = false;
-  } else if (!display.value.includes('.')) {
-    display.value += '.';
-  }
-  currentValue = display.value;
-}
-
